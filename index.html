@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="id" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstroLearn - Media Pembelajaran Astronomi Interaktif</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Google Fonts: Plus Jakarta Sans & Orbitron -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Three.js for 3D Solar System Visualizer -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cosmic: {
+                            950: '#02040a',
+                            900: '#070c18',
+                            800: '#0f172a',
+                            700: '#1e293b',
+                            cyan: '#38bdf8',
+                            violet: '#c084fc',
+                            amber: '#fbbf24'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #02040a;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism effects */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(56, 189, 248, 0.4);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px -10px rgba(56, 189, 248, 0.25);
+        }
+
+        .glow-text-cyan {
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.7);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #02040a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #38bdf8;
+        }
+
+        /* Dynamic Cosmic Space Background Canvas */
+        #stars-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased selection:bg-sky-500 selection:text-white">
+
+    <!-- Dynamic Space Background Canvas -->
+    <canvas id="stars-canvas"></canvas>
+
+    <!-- Navigation Header -->
+    <header class="fixed top-0 left-0 right-0 z-50 glass-panel border-b border-slate-800/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- Brand Logo -->
+            <a href="#home" class="flex items-center gap-3 group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 via-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-sky-500/20 group-hover:scale-105 transition-transform">
+                    <i class="fa-solid fa-user-astronaut text-lg"></i>
+                </div>
+                <div>
+                    <span class="font-display font-extrabold text-xl tracking-wider text-white">Astro<span class="text-sky-400">Learn</span></span>
+                    <span class="block text-[10px] text-slate-400 -mt-1 font-mono uppercase tracking-widest">Edukasi Kosmos</span>
+                </div>
+            </a>
+
+            <!-- Desktop Nav Links -->
+            <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
+                <a href="#modul" class="hover:text-sky-400 transition-colors flex items-center gap-2"><i class="fa-solid fa-book-open text-xs text-sky-400"></i> Modul</a>
+                <a href="#solarsystem" class="hover:text-sky-400 transition-colors flex items-center gap-2"><i class="fa-solid fa-globe text-xs text-purple-400"></i> Tata Surya 3D</a>
+                <a href="#simulators" class="hover:text-sky-400 transition-colors flex items-center gap-2"><i class="fa-solid fa-flask text-xs text-emerald-400"></i> Praktikum Digital</a>
+                <a href="#kamus" class="hover:text-sky-400 transition-colors flex items-center gap-2"><i class="fa-solid fa-book-atlas text-xs text-rose-400"></i> Glosarium Lengkap</a>
+            </nav>
+
+            <!-- Quick Action & Mobile Toggle -->
+            <div class="flex items-center gap-3">
+                <a href="#solarsystem" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-sky-500 to-indigo-600 hover:opacity-90 shadow-md shadow-sky-500/20 transition-all hover:-translate-y-0.5">
+                    <i class="fa-solid fa-compass"></i> Eksplorasi 3D
+                </a>
+
+                <button id="mobile-menu-btn" class="md:hidden p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Nav Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-slate-950/95 border-b border-slate-800 px-6 py-4 space-y-3 font-medium text-sm">
+            <a href="#modul" onclick="toggleMobileMenu()" class="block py-2 text-slate-200 hover:text-sky-400"><i class="fa-solid fa-book-open mr-2 text-sky-400"></i>Modul Pelajaran</a>
+            <a href="#solarsystem" onclick="toggleMobileMenu()" class="block py-2 text-slate-200 hover:text-sky-400"><i class="fa-solid fa-globe mr-2 text-purple-400"></i>Tata Surya 3D</a>
+            <a href="#simulators" onclick="toggleMobileMenu()" class="block py-2 text-slate-200 hover:text-sky-400"><i class="fa-solid fa-flask mr-2 text-emerald-400"></i>Simulasi Praktikum</a>
+            <a href="#kamus" onclick="toggleMobileMenu()" class="block py-2 text-slate-200 hover:text-sky-400"><i class="fa-solid fa-book-atlas mr-2 text-rose-400"></i>Glosarium Astronomi</a>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="relative z-10 pt-20">
+
+        <!-- Hero Section -->
+        <section id="home" class="relative min-h-[85vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-20 overflow-hidden">
+            <div class="max-w-5xl mx-auto text-center space-y-8 relative z-10">
+                <!-- Badge -->
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-400 text-xs font-semibold tracking-wide">
+                    <span class="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span>
+                    Portal Edukasi Astronomi Interaktif & Simulator Kosmos
+                </div>
+
+                <!-- Main Heading -->
+                <h1 class="font-display text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-tight">
+                    Jelajahi Rahasia <br class="hidden sm:inline">
+                    <span class="bg-gradient-to-r from-sky-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent glow-text-cyan">
+                        Misteri Alam Semesta
+                    </span>
+                </h1>
+
+                <!-- Subtitle -->
+                <p class="max-w-2xl mx-auto text-slate-300 text-base sm:text-lg leading-relaxed font-light">
+                    Pelajari astrofisika, mekanika benda langit, struktur planet, hingga fenomena kosmologi dengan visualisasi 3D interaktif yang hidup.
+                </p>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
+                    <a href="#solarsystem" class="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-white bg-gradient-to-r from-sky-500 via-indigo-600 to-purple-600 hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3 group">
+                        <i class="fa-solid fa-rocket group-hover:animate-bounce"></i> Penjelajah Tata Surya 3D
+                    </a>
+                    <a href="#modul" class="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-slate-200 bg-slate-900/80 border border-slate-700 hover:border-purple-500/50 hover:bg-slate-800 transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-book-open text-sky-400"></i> Baca Modul Pelajaran
+                    </a>
+                </div>
+
+                <!-- Quick Stats Badge -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-12 max-w-3xl mx-auto">
+                    <div class="p-4 rounded-2xl glass-card text-center">
+                        <div class="font-display text-2xl sm:text-3xl font-extrabold text-sky-400">4 Bab</div>
+                        <div class="text-xs text-slate-400 mt-1">Modul Materi</div>
+                    </div>
+                    <div class="p-4 rounded-2xl glass-card text-center">
+                        <div class="font-display text-2xl sm:text-3xl font-extrabold text-purple-400">3D Zoom</div>
+                        <div class="text-xs text-slate-400 mt-1">Fokus Kamera Planet</div>
+                    </div>
+                    <div class="p-4 rounded-2xl glass-card text-center">
+                        <div class="font-display text-2xl sm:text-3xl font-extrabold text-emerald-400">2 Alat</div>
+                        <div class="text-xs text-slate-400 mt-1">Simulasi Praktikum</div>
+                    </div>
+                    <div class="p-4 rounded-2xl glass-card text-center">
+                        <div class="font-display text-2xl sm:text-3xl font-extrabold text-rose-400">30+ Istilah</div>
+                        <div class="text-xs text-slate-400 mt-1">Glosarium Lengkap</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Module Section (Modul Pelajaran Astronomi) -->
+        <section id="modul" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <span class="text-xs font-bold text-sky-400 uppercase tracking-widest font-mono">Kurikulum Sains Akademik</span>
+                <h2 class="font-display text-3xl sm:text-4xl font-extrabold text-white mt-2">Modul Pelajaran Astronomi</h2>
+                <p class="text-slate-400 text-sm sm:text-base mt-3">
+                    Pelajari konsep fundamental astronomi dan astrofisika modern yang disajikan secara terstruktur.
+                </p>
+            </div>
+
+            <!-- Modules Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Module 1 Card -->
+                <div class="glass-card p-6 sm:p-8 rounded-3xl relative overflow-hidden flex flex-col justify-between group">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 rounded-full blur-2xl group-hover:bg-sky-500/20 transition-all"></div>
+                    <div>
+                        <div class="flex items-center justify-between mb-6">
+                            <span class="px-3 py-1 rounded-lg bg-sky-500/20 text-sky-400 text-xs font-bold font-mono">BAB 01</span>
+                            <i class="fa-solid fa-sun text-2xl text-amber-400"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-3">Pengenalan Astronomi & Tata Surya</h3>
+                        <p class="text-slate-300 text-sm leading-relaxed mb-6">
+                            Mempelajari sejarah astronomi, Hukum I-III Kepler gerakan planet, struktur Matahari, serta perbandingan planet kebumian vs raksasa gas.
+                        </p>
+                        <div class="flex flex-wrap gap-2 mb-6">
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">Hukum Kepler</span>
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">Struktur Matahari</span>
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">Terestrial vs Jovian</span>
+                        </div>
+                    </div>
+                    <button onclick="openModuleModal(1)" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-sky-500 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 border border-slate-700 hover:border-sky-400">
+                        <i class="fa-solid fa-book-reader"></i> Baca Materi Lengkap
+                    </button>
+                </div>
+
+                <!-- Module 2 Card -->
+                <div class="glass-card p-6 sm:p-8 rounded-3xl relative overflow-hidden flex flex-col justify-between group">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-all"></div>
+                    <div>
+                        <div class="flex items-center justify-between mb-6">
+                            <span class="px-3 py-1 rounded-lg bg-purple-500/20 text-purple-400 text-xs font-bold font-mono">BAB 02</span>
+                            <i class="fa-solid fa-star text-2xl text-purple-400"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-3">Bintang & Astrofisika Evolusi</h3>
+                        <p class="text-slate-300 text-sm leading-relaxed mb-6">
+                            Memahami reaksi fusi nuklir bintang, klasifikasi spektral OBAFGKM, hingga tahap Katai Putih, Supernova, Bintang Neutron & Lubang Hitam.
+                        </p>
+                        <div class="flex flex-wrap gap-2 mb-6">
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">Daur Hidup Bintang</span>
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">Kelas Spektrum</span>
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">Black Hole & Supernova</span>
+                        </div>
+                    </div>
+                    <button onclick="openModuleModal(2)" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-purple-500 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 border border-slate-700 hover:border-purple-400">
+                        <i class="fa-solid fa-book-reader"></i> Baca Materi Lengkap
+                    </button>
+                </div>
+
+                <!-- Module 3 Card -->
+                <div class="glass-card p-6 sm:p-8 rounded-3xl relative overflow-hidden flex flex-col justify-between group">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all"></div>
+                    <div>
+                        <div class="flex items-center justify-between mb-6">
+                            <span class="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 text-xs font-bold font-mono">BAB 03</span>
+                            <i class="fa-solid fa-atom text-2xl text-emerald-400"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-3">Galaksi & Kosmologi Modern</h3>
+                        <p class="text-slate-300 text-sm leading-relaxed mb-6">
+                            Menjelajahi struktur Galaksi Bima Sakti, teori terbentuknya Alam Semesta (Big Bang), Hukum Hubble tentang ekspansi ruang, serta Misteri Dark Matter.
+                        </p>
+                        <div class="flex flex-wrap gap-2 mb-6">
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">Bima Sakti</span>
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">Teori Big Bang</span>
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">Materi & Energi Gelap</span>
+                        </div>
+                    </div>
+                    <button onclick="openModuleModal(3)" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-emerald-500 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 border border-slate-700 hover:border-emerald-400">
+                        <i class="fa-solid fa-book-reader"></i> Baca Materi Lengkap
+                    </button>
+                </div>
+
+                <!-- Module 4 Card -->
+                <div class="glass-card p-6 sm:p-8 rounded-3xl relative overflow-hidden flex flex-col justify-between group">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all"></div>
+                    <div>
+                        <div class="flex items-center justify-between mb-6">
+                            <span class="px-3 py-1 rounded-lg bg-amber-500/20 text-amber-400 text-xs font-bold font-mono">BAB 04</span>
+                            <i class="fa-solid fa-moon text-2xl text-amber-400"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-3">Sistem Bumi-Bulan & Fenomena Langit</h3>
+                        <p class="text-slate-300 text-sm leading-relaxed mb-6">
+                            Penjelasan gerak rotasi dan revolusi Bumi, sebab timbulnya pergantian musim, fase-fase Bulan, mekanisme Gerhana Total & Cincin, serta Pasang Surut Laut.
+                        </p>
+                        <div class="flex flex-wrap gap-2 mb-6">
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">Fase Bulan</span>
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">Gerhana Matahari & Bulan</span>
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">Pasang Surut Air Laut</span>
+                        </div>
+                    </div>
+                    <button onclick="openModuleModal(4)" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-amber-500 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 border border-slate-700 hover:border-amber-400">
+                        <i class="fa-solid fa-book-reader"></i> Baca Materi Lengkap
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive 3D Solar System Visualizer -->
+        <section id="solarsystem" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+            <div class="glass-panel rounded-3xl p-6 sm:p-10 border border-slate-800 relative overflow-hidden">
+                <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-8">
+                    <div>
+                        <span class="text-xs font-bold text-purple-400 uppercase tracking-widest font-mono">Simulasi Visual 3D Interaktif & Texture High Quality</span>
+                        <h2 class="font-display text-2xl sm:text-4xl font-extrabold text-white mt-1">Penjelajah Tata Surya 3D</h2>
+                        <p class="text-slate-400 text-sm mt-1">Klik tombol nama planet di bawah untuk membidik & memperbesar kamera langsung ke planet tersebut!</p>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="flex flex-wrap items-center gap-2 self-stretch lg:self-auto justify-end">
+                        <button id="toggle-orbit-anim" onclick="toggleOrbitAnimation()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-2">
+                            <i class="fa-solid fa-pause text-sky-400" id="anim-icon"></i> <span id="anim-text">Jeda Orbit</span>
+                        </button>
+                        <button onclick="selectPlanet('overview')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-2">
+                            <i class="fa-solid fa-eye text-purple-400"></i> Pandangan Luas
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+                    <!-- 3D Canvas Area -->
+                    <div class="lg:col-span-2 relative aspect-square sm:aspect-video rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-2xl">
+                        <div id="canvas-3d-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+                        <div class="absolute bottom-3 left-3 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg text-[11px] text-slate-300 border border-slate-800 flex items-center gap-2 shadow-lg">
+                            <i class="fa-solid fa-crosshairs text-sky-400 animate-pulse"></i> Mode Kamera: <span id="camera-mode-label" class="font-semibold text-sky-300">Overview Tata Surya</span>
+                        </div>
+                    </div>
+
+                    <!-- Selected Body Info Panel -->
+                    <div class="bg-slate-900/90 rounded-2xl p-6 border border-slate-800 flex flex-col justify-between h-full shadow-xl">
+                        <div>
+                            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                                <div>
+                                    <h3 id="planet-name" class="font-display text-2xl font-bold text-white">Bumi (Earth)</h3>
+                                    <span id="planet-type" class="text-xs font-semibold text-sky-400 uppercase tracking-wider">Planet Terestrial</span>
+                                </div>
+                                <div id="planet-color-badge" class="w-7 h-7 rounded-full bg-sky-400 shadow-lg shadow-sky-500/50 border border-white/20"></div>
+                            </div>
+
+                            <p id="planet-desc" class="text-slate-300 text-xs sm:text-sm leading-relaxed my-4">
+                                Bumi adalah satu-satunya planet yang diketahui memiliki kehidupan di alam semesta. Memiliki atmosfer kaya oksigen dan air cair di permukaannya.
+                            </p>
+
+                            <!-- Planet Data Stats -->
+                            <div class="space-y-3 pt-2 text-xs">
+                                <div class="flex justify-between py-1.5 border-b border-slate-800/60">
+                                    <span class="text-slate-400"><i class="fa-solid fa-ruler-horizontal mr-2 text-sky-400"></i>Jarak dari Matahari:</span>
+                                    <span id="planet-dist" class="font-mono text-slate-200">1 AU (149.6 Juta km)</span>
+                                </div>
+                                <div class="flex justify-between py-1.5 border-b border-slate-800/60">
+                                    <span class="text-slate-400"><i class="fa-solid fa-circle-notch mr-2 text-purple-400"></i>Periode Revolusi:</span>
+                                    <span id="planet-period" class="font-mono text-slate-200">365.25 Hari</span>
+                                </div>
+                                <div class="flex justify-between py-1.5 border-b border-slate-800/60">
+                                    <span class="text-slate-400"><i class="fa-solid fa-rotate mr-2 text-emerald-400"></i>Periode Rotasi:</span>
+                                    <span id="planet-rotation" class="font-mono text-slate-200">23.9 Jam</span>
+                                </div>
+                                <div class="flex justify-between py-1.5 border-b border-slate-800/60">
+                                    <span class="text-slate-400"><i class="fa-solid fa-temperature-half mr-2 text-amber-400"></i>Suhu Rata-rata:</span>
+                                    <span id="planet-temp" class="font-mono text-slate-200">15 °C</span>
+                                </div>
+                                <div class="flex justify-between py-1.5">
+                                    <span class="text-slate-400"><i class="fa-solid fa-moon mr-2 text-indigo-400"></i>Jumlah Satelit:</span>
+                                    <span id="planet-moons" class="font-mono text-slate-200">1 (Bulan / Luna)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 pt-4 border-t border-slate-800 text-[11px] text-slate-400 italic">
+                            *Skala ukuran & jarak visualisasi 3D telah disesuaikan agar mudah diamati dari dekat secara langsung.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Planet Selector Buttons -->
+                <div class="mt-6 flex flex-wrap gap-2 justify-center">
+                    <button onclick="selectPlanet('sun')" class="planet-btn px-4 py-2.5 rounded-xl text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/40 hover:bg-amber-500/30 transition-all flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Matahari
+                    </button>
+                    <button onclick="selectPlanet('mercury')" class="planet-btn px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:border-sky-400 transition-all flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span> Merkurius
+                    </button>
+                    <button onclick="selectPlanet('venus')" class="planet-btn px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:border-sky-400 transition-all flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-200"></span> Venus
+                    </button>
+                    <button onclick="selectPlanet('earth')" class="planet-btn px-4 py-2.5 rounded-xl text-xs font-bold bg-sky-500 text-white border border-sky-400 hover:bg-sky-600 transition-all flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-sky-300"></span> Bumi
+                    </button>
+                    <button onclick="selectPlanet('mars')" class="planet-btn px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:border-sky-400 transition-all flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Mars
+                    </button>
+                    <button onclick="selectPlanet('jupiter')" class="planet-btn px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:border-sky-400 transition-all flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Yupiter
+                    </button>
+                    <button onclick="selectPlanet('saturn')" class="planet-btn px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:border-sky-400 transition-all flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-300"></span> Saturnus
+                    </button>
+                    <button onclick="selectPlanet('uranus')" class="planet-btn px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:border-sky-400 transition-all flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-teal-300"></span> Uranus
+                    </button>
+                    <button onclick="selectPlanet('neptune')" class="planet-btn px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:border-sky-400 transition-all flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Neptunus
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Simulators & Tools Section -->
+        <section id="simulators" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <span class="text-xs font-bold text-emerald-400 uppercase tracking-widest font-mono">Alat Praktikum Digital</span>
+                <h2 class="font-display text-3xl sm:text-4xl font-extrabold text-white mt-2">Simulasi & Kalkulator Praktikum</h2>
+                <p class="text-slate-400 text-sm sm:text-base mt-3">
+                    Uji variasi gravitasi antar planet serta pelajari siklus fase Bulan dengan instrumen praktikum interaktif.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Tool 1: Planetary Weight Calculator -->
+                <div class="glass-card p-6 sm:p-8 rounded-3xl border border-slate-800 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-weight-scale"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">Kalkulator Berat di Benda Langit</h3>
+                                <p class="text-xs text-slate-400">Akibat perbedaan percepatan gravitasi permukaan celestial body</p>
+                            </div>
+                        </div>
+
+                        <div class="my-6">
+                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                                Masukkan Berat Badan Anda di Bumi (kg):
+                            </label>
+                            <input type="number" id="earth-weight" value="60" min="1" max="300" oninput="calculatePlanetaryWeights()" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+
+                        <!-- Results Grid -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                                <span class="text-[10px] text-slate-400 uppercase block">Bulan (0.16g)</span>
+                                <span id="weight-moon" class="font-mono text-base font-bold text-emerald-400">9.9 kg</span>
+                            </div>
+                            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                                <span class="text-[10px] text-slate-400 uppercase block">Mars (0.38g)</span>
+                                <span id="weight-mars" class="font-mono text-base font-bold text-emerald-400">22.6 kg</span>
+                            </div>
+                            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                                <span class="text-[10px] text-slate-400 uppercase block">Yupiter (2.53g)</span>
+                                <span id="weight-jupiter" class="font-mono text-base font-bold text-emerald-400">151.7 kg</span>
+                            </div>
+                            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                                <span class="text-[10px] text-slate-400 uppercase block">Matahari (27.9g)</span>
+                                <span id="weight-sun" class="font-mono text-base font-bold text-emerald-400">1674 kg</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-slate-500 mt-6 pt-4 border-t border-slate-800">
+                        *Massa tubuh Anda tetap konstan, namun gaya berat ($W = m \times g$) berubah karena perbedaan percepatan gravitasi tiap benda langit.
+                    </p>
+                </div>
+
+                <!-- Tool 2: Interactive Moon Phase Simulator -->
+                <div class="glass-card p-6 sm:p-8 rounded-3xl border border-slate-800 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-moon"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">Simulasi Fase Bulan Interaktif</h3>
+                                <p class="text-xs text-slate-400">Siklus sinodis Bulan selama 29.5 hari mengelilingi Bumi</p>
+                            </div>
+                        </div>
+
+                        <!-- Moon Visualizer Graphics -->
+                        <div class="my-6 flex flex-col items-center justify-center p-6 bg-slate-950 rounded-2xl border border-slate-800">
+                            <div class="relative w-28 h-28 rounded-full overflow-hidden border-2 border-slate-700 bg-slate-900 shadow-inner flex items-center justify-center mb-4">
+                                <div id="moon-phase-visual" class="w-full h-full rounded-full transition-all duration-300" style="background: radial-gradient(circle at 30% 30%, #fef08a, #ca8a04 80%);"></div>
+                            </div>
+                            <h4 id="moon-phase-name" class="font-display font-bold text-lg text-amber-300">Bulan Purnama (Full Moon)</h4>
+                            <p id="moon-phase-desc" class="text-xs text-slate-400 text-center mt-1">Hari ke-14: Seluruh permukaan Bulan yang menghadap Bumi tersinari penuh oleh Matahari.</p>
+                        </div>
+
+                        <!-- Range Slider -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs text-slate-400 font-mono">
+                                <span>Hari 0 (Baru)</span>
+                                <span>Hari 14 (Purnama)</span>
+                                <span>Hari 29 (Baru)</span>
+                            </div>
+                            <input type="range" id="moon-slider" min="0" max="29" value="14" oninput="updateMoonPhaseSim(this.value)" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400">
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-slate-500 mt-6 pt-4 border-t border-slate-800">
+                        *Geser slider di atas untuk mengamati perubahan iluminasi Bulan yang tampak dari Bumi.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Astronomy Terms Glossary (Expanded Encyclopedia) -->
+        <section id="kamus" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+            <div class="text-center max-w-3xl mx-auto mb-10">
+                <span class="text-xs font-bold text-rose-400 uppercase tracking-widest font-mono">Ensiklopedia Kosmos Lengkap</span>
+                <h2 class="font-display text-3xl sm:text-4xl font-extrabold text-white mt-1">Glosarium Astronomi</h2>
+                <p class="text-slate-400 text-sm mt-2">Kumpulan lengkap istilah penting, fenomena astrofisika, dan konsep alam semesta.</p>
+            </div>
+
+            <!-- Category Filters & Search -->
+            <div class="max-w-4xl mx-auto mb-8 space-y-4">
+                <!-- Search Box -->
+                <div class="relative">
+                    <input type="text" id="glossary-search" oninput="filterGlossary()" placeholder="Cari istilah astronomi (contoh: Quasar, Parsec, Black Hole, Nebula, Magnetar)..." class="w-full px-5 py-4 pl-12 rounded-2xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-base"></i>
+                </div>
+
+                <!-- Category Pills -->
+            <div class="flex flex-wrap items-center justify-center gap-2 pt-2">
+                <button onclick="setGlossaryCategory('all', event)" class="glossary-cat-btn px-4 py-2 rounded-xl text-xs font-bold bg-rose-500 text-white border border-rose-400 transition-all">Semua Topik (<span id="cat-count-all">32</span>)</button>
+                <button onclick="setGlossaryCategory('bintang', event)" class="glossary-cat-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-300 border border-slate-700 hover:border-rose-400 transition-all">Bintang & Galaksi</button>
+                <button onclick="setGlossaryCategory('tatasurya', event)" class="glossary-cat-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-300 border border-slate-700 hover:border-rose-400 transition-all">Tata Surya & Eksoplanet</button>
+                <button onclick="setGlossaryCategory('kosmologi', event)" class="glossary-cat-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-300 border border-slate-700 hover:border-rose-400 transition-all">Kosmologi & Fisika</button>
+                <button onclick="setGlossaryCategory('eksplorasi', event)" class="glossary-cat-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-slate-300 border border-slate-700 hover:border-rose-400 transition-all">Istilah & Alat Ukur</button>
+            </div>
+        </div>
+
+        <!-- Glossary Grid -->
+            <div id="glossary-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cards filled via JS dynamically -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Reading Modal for Lesson Modules -->
+    <div id="module-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md hidden">
+        <div class="bg-slate-900 rounded-3xl max-w-3xl w-full max-h-[85vh] flex flex-col border border-slate-800 shadow-2xl overflow-hidden">
+            <!-- Modal Header -->
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+                <div class="flex items-center gap-3">
+                    <span id="modal-chapter-badge" class="px-3 py-1 rounded-lg bg-sky-500/20 text-sky-400 text-xs font-mono font-bold">BAB 01</span>
+                    <h3 id="modal-chapter-title" class="text-lg font-bold text-white">Pengenalan Astronomi & Tata Surya</h3>
+                </div>
+                <button onclick="closeModuleModal()" class="w-9 h-9 rounded-xl bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div id="modal-chapter-content" class="p-6 sm:p-8 overflow-y-auto space-y-6 text-slate-300 text-sm leading-relaxed">
+                <!-- Content injected dynamically -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 border-t border-slate-800 bg-slate-900 flex justify-end">
+                <button onclick="closeModuleModal()" class="px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs">
+                    Tutup Materi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 bg-slate-950 py-12 text-slate-400 text-xs relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold">
+                    <i class="fa-solid fa-user-astronaut"></i>
+                </div>
+                <span class="font-display font-bold text-white text-sm">AstroLearn Edukasi</span>
+            </div>
+            <p>&copy; <span id="year-span"></span> AstroLearn - Media Edukasi Astronomi Interaktif Indonesia.</p>
+            <div class="flex gap-4">
+                <a href="#modul" class="hover:text-sky-400">Modul</a>
+                <a href="#solarsystem" class="hover:text-sky-400">3D Tata Surya</a>
+                <a href="#kamus" class="hover:text-sky-400">Glosarium</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Code Section -->
+    <script>
+        document.getElementById('year-span').textContent = new Date().getFullYear();
+
+        // Mobile Menu Toggle
+        function toggleMobileMenu() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        }
+        document.getElementById('mobile-menu-btn').addEventListener('click', toggleMobileMenu);
+
+        // -------------------------------------------------------------
+        // DYNAMIC COSMIC SPACE BACKGROUND CANVAS (Twinkling Stars & Meteors)
+        // -------------------------------------------------------------
+        const starsCanvas = document.getElementById('stars-canvas');
+        const ctx = starsCanvas.getContext('2d');
+        let stars = [];
+        let meteors = [];
+
+        function resizeStarsCanvas() {
+            starsCanvas.width = window.innerWidth;
+            starsCanvas.height = window.innerHeight;
+            initStars();
+        }
+
+        function initStars() {
+            stars = [];
+            const starCount = Math.floor((starsCanvas.width * starsCanvas.height) / 2200);
+            const colors = ['#ffffff', '#38bdf8', '#c084fc', '#fef08a'];
+
+            for (let i = 0; i < starCount; i++) {
+                stars.push({
+                    x: Math.random() * starsCanvas.width,
+                    y: Math.random() * starsCanvas.height,
+                    radius: Math.random() * 1.5 + 0.3,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    alpha: Math.random(),
+                    speed: 0.005 + Math.random() * 0.02
+                });
+            }
+        }
+
+        function spawnMeteor() {
+            if (Math.random() < 0.03 && meteors.length < 3) {
+                meteors.push({
+                    x: Math.random() * starsCanvas.width * 0.8,
+                    y: Math.random() * starsCanvas.height * 0.4,
+                    length: Math.random() * 80 + 50,
+                    speed: Math.random() * 10 + 12,
+                    angle: Math.PI / 4,
+                    alpha: 1
+                });
+            }
+        }
+
+        function drawSpaceBackground() {
+            ctx.clearRect(0, 0, starsCanvas.width, starsCanvas.height);
+
+            // Draw Subtle Nebula Glow Clouds
+            const grad1 = ctx.createRadialGradient(starsCanvas.width * 0.2, starsCanvas.height * 0.3, 50, starsCanvas.width * 0.2, starsCanvas.height * 0.3, 400);
+            grad1.addColorStop(0, 'rgba(56, 189, 248, 0.06)');
+            grad1.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad1;
+            ctx.fillRect(0, 0, starsCanvas.width, starsCanvas.height);
+
+            const grad2 = ctx.createRadialGradient(starsCanvas.width * 0.8, starsCanvas.height * 0.7, 50, starsCanvas.width * 0.8, starsCanvas.height * 0.7, 500);
+            grad2.addColorStop(0, 'rgba(192, 132, 252, 0.06)');
+            grad2.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad2;
+            ctx.fillRect(0, 0, starsCanvas.width, starsCanvas.height);
+
+            // Draw Twinkling Stars
+            stars.forEach(star => {
+                star.alpha += star.speed;
+                if (star.alpha > 1 || star.alpha < 0.1) star.speed = -star.speed;
+
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fillStyle = star.color;
+                ctx.globalAlpha = Math.abs(star.alpha);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1.0;
+
+            // Draw Meteors (Shooting Stars)
+            spawnMeteor();
+            for (let i = meteors.length - 1; i >= 0; i--) {
+                const m = meteors[i];
+                const tailX = m.x - Math.cos(m.angle) * m.length;
+                const tailY = m.y - Math.sin(m.angle) * m.length;
+
+                const meteorGrad = ctx.createLinearGradient(m.x, m.y, tailX, tailY);
+                meteorGrad.addColorStop(0, `rgba(255, 255, 255, ${m.alpha})`);
+                meteorGrad.addColorStop(1, 'transparent');
+
+                ctx.beginPath();
+                ctx.moveTo(m.x, m.y);
+                ctx.lineTo(tailX, tailY);
+                ctx.strokeStyle = meteorGrad;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                m.x += Math.cos(m.angle) * m.speed;
+                m.y += Math.sin(m.angle) * m.speed;
+                m.alpha -= 0.015;
+
+                if (m.alpha <= 0 || m.x > starsCanvas.width || m.y > starsCanvas.height) {
+                    meteors.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(drawSpaceBackground);
+        }
+
+        window.addEventListener('resize', resizeStarsCanvas);
+        resizeStarsCanvas();
+        drawSpaceBackground();
+
+        // -------------------------------------------------------------
+        // THREE.JS 3D SOLAR SYSTEM VISUALIZER (Enhanced Textures & Target Focus)
+        // -------------------------------------------------------------
+        let scene, camera, renderer, sunMesh;
+        let planetMeshes = [];
+        let isOrbitAnimating = true;
+
+        // Camera Tracking & Lerp variables
+        let focusedTarget = null; // null for overview, or planet mesh
+        let targetCameraPos = new THREE.Vector3(0, 30, 60);
+        let targetLookAtPos = new THREE.Vector3(0, 0, 0);
+        let currentLookAtPos = new THREE.Vector3(0, 0, 0);
+
+        const planetData = {
+            sun: { name: 'Matahari (Sun)', type: 'Bintang Induk (Spektral G2V)', color: 0xfbcb24, size: 4.0, dist: 0, speed: 0, distTxt: '0 AU (Pusat System)', periodTxt: '-', rotTxt: '25-35 Hari', tempTxt: '5,500 °C (Permukaan)', moonsTxt: '8 Planet Utama', desc: 'Matahari adalah bintang bola plasma panas raksasa yang menjadi pusat gaya gravitasi Tata Surya kita.' },
+            mercury: { name: 'Merkurius', type: 'Planet Terestrial', color: 0x94a3b8, size: 0.8, dist: 8, speed: 0.025, distTxt: '0.39 AU (57.9 Juta km)', periodTxt: '88 Hari', rotTxt: '58.6 Hari', tempTxt: '167 °C (-180°C s.d. 430°C)', moonsTxt: '0 Satelit', desc: 'Planet terdekat dengan Matahari, penuh dengan kawah dampak meteorit dan tidak memiliki atmosfer tebal.' },
+            venus: { name: 'Venus', type: 'Planet Terestrial (Awan CO2)', color: 0xf1f5f9, size: 1.1, dist: 12, speed: 0.018, distTxt: '0.72 AU (108.2 Juta km)', periodTxt: '225 Hari', rotTxt: '243 Hari (Retrograd)', tempTxt: '464 °C (Efek Rumah Kaca)', moonsTxt: '0 Satelit', desc: 'Planet terpanas di Tata Surya akibat efek rumah kaca ekstrem. Berotasi terbalik berlawanan arah dengan planet lain.' },
+            earth: { name: 'Bumi (Earth)', type: 'Planet Terestrial (Air & Kehidupan)', color: 0x38bdf8, size: 1.2, dist: 17, speed: 0.014, distTxt: '1.00 AU (149.6 Juta km)', periodTxt: '365.25 Hari', rotTxt: '23.9 Jam', tempTxt: '15 °C', moonsTxt: '1 (Bulan / Luna)', desc: 'Satu-satunya planet berpenghuni yang diketahui, kaya akan samudra air cair dan atmosfer oksigen pelindung.' },
+            mars: { name: 'Mars', type: 'Planet Terestrial (Planet Merah)', color: 0xef4444, size: 0.9, dist: 22, speed: 0.010, distTxt: '1.52 AU (227.9 Juta km)', periodTxt: '687 Hari', rotTxt: '24.6 Jam', tempTxt: '-65 °C', moonsTxt: '2 (Phobos & Deimos)', desc: 'Planet merah dengan kandungan besi oksida tinggi, memiliki gunung berapi Olympus Mons serta es di kutubnya.' },
+            jupiter: { name: 'Yupiter (Jupiter)', type: 'Raksasa Gas (Gas Giant)', color: 0xf59e0b, size: 2.6, dist: 29, speed: 0.006, distTxt: '5.20 AU (778.5 Juta km)', periodTxt: '11.86 Tahun', rotTxt: '9.9 Jam', tempTxt: '-110 °C', moonsTxt: '95 Satelit Alami', desc: 'Planet terbesar di Tata Surya dengan Bintik Merah Raksasa (Great Red Spot) yang merupakan badai raksasa abadi.' },
+            saturn: { name: 'Saturnus', type: 'Raksasa Gas (Sistem Cincin)', color: 0xeab308, size: 2.2, dist: 37, speed: 0.004, distTxt: '9.58 AU (1.43 Miliar km)', periodTxt: '29.45 Tahun', rotTxt: '10.7 Jam', tempTxt: '-140 °C', moonsTxt: '146 Satelit Alami', desc: 'Planet raksasa dengan sistem cincin yang paling spektakuler yang terdiri dari miliaran es dan debu angkasa.' },
+            uranus: { name: 'Uranus', type: 'Raksasa Es (Ice Giant)', color: 0x06b6d4, size: 1.6, dist: 44, speed: 0.003, distTxt: '19.22 AU (2.87 Miliar km)', periodTxt: '84 Tahun', rotTxt: '17.2 Jam (Rebah 98°)', tempTxt: '-195 °C', moonsTxt: '28 Satelit Alami', desc: 'Raksasa es berwarna biru kehijauan yang mengorbit Matahari dengan posisi sumbu rotasi rebah menyamping.' },
+            neptune: { name: 'Neptunus', type: 'Raksasa Es (Atmosphere Biru)', color: 0x3b82f6, size: 1.5, dist: 51, speed: 0.002, distTxt: '30.05 AU (4.5 Miliar km)', periodTxt: '164.8 Tahun', rotTxt: '16.1 Jam', tempTxt: '-200 °C', moonsTxt: '16 Satelit Alami', desc: 'Planet terluar di Tata Surya dengan warna biru pekat dan hembusan angin supersonik hingga 2,100 km/jam.' }
+        };
+
+        // Procedural Texture Generator via HTML Canvas
+        function createPlanetCanvasTexture(type, baseColor) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 256;
+            const c = canvas.getContext('2d');
+
+            c.fillStyle = baseColor;
+            c.fillRect(0, 0, 512, 256);
+
+            if (type === 'sun') {
+                for (let i = 0; i < 3000; i++) {
+                    c.fillStyle = Math.random() > 0.5 ? '#fef08a' : '#ea580c';
+                    c.fillRect(Math.random() * 512, Math.random() * 256, 3, 3);
+                }
+            } else if (type === 'jupiter') {
+                for (let y = 0; y < 256; y++) {
+                    const band = Math.sin(y * 0.1) * 30 + Math.cos(y * 0.05) * 20;
+                    c.fillStyle = `rgba(${180 + band}, ${110 + band/2}, 40, 0.4)`;
+                    c.fillRect(0, y, 512, 2);
+                }
+                // Great Red Spot
+                c.fillStyle = '#b91c1c';
+                c.beginPath();
+                c.ellipse(300, 160, 35, 20, 0, 0, Math.PI * 2);
+                c.fill();
+            } else if (type === 'earth') {
+                c.fillStyle = '#15803d'; // Continents
+                for (let i = 0; i < 15; i++) {
+                    c.beginPath();
+                    c.arc(Math.random() * 512, Math.random() * 256, Math.random() * 40 + 20, 0, Math.PI * 2);
+                    c.fill();
+                }
+                c.fillStyle = 'rgba(255, 255, 255, 0.6)'; // Clouds
+                for (let i = 0; i < 20; i++) {
+                    c.fillRect(Math.random() * 512, Math.random() * 256, Math.random() * 80 + 20, 4);
+                }
+            } else if (type === 'neptune') {
+                for (let y = 0; y < 256; y++) {
+                    c.fillStyle = `rgba(30, 64, 175, ${0.3 + Math.sin(y * 0.05) * 0.2})`;
+                    c.fillRect(0, y, 512, 3);
+                }
+            }
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function init3DScene() {
+            const container = document.getElementById('canvas-3d-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+            camera.position.set(0, 35, 70);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0xffffff, 2.0, 300);
+            pointLight.position.set(0, 0, 0);
+            scene.add(pointLight);
+
+            // Create Sun Mesh
+            const sunGeo = new THREE.SphereGeometry(planetData.sun.size, 32, 32);
+            const sunMat = new THREE.MeshBasicMaterial({ 
+                map: createPlanetCanvasTexture('sun', '#f59e0b')
+            });
+            sunMesh = new THREE.Mesh(sunGeo, sunMat);
+            sunMesh.userData = { key: 'sun', name: 'Matahari' };
+            scene.add(sunMesh);
+
+            // Sun Outer Corona Glow Mesh
+            const glowGeo = new THREE.SphereGeometry(planetData.sun.size * 1.25, 32, 32);
+            const glowMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.2 });
+            scene.add(new THREE.Mesh(glowGeo, glowMat));
+
+            // Create Planets & Orbit Ring Lines
+            planetMeshes = [];
+            Object.keys(planetData).forEach(key => {
+                if (key === 'sun') return;
+                const p = planetData[key];
+
+                // Orbit Line Ring
+                const orbitGeo = new THREE.BufferGeometry();
+                const points = [];
+                for (let i = 0; i <= 128; i++) {
+                    const theta = (i / 128) * Math.PI * 2;
+                    points.push(new THREE.Vector3(Math.cos(theta) * p.dist, 0, Math.sin(theta) * p.dist));
+                }
+                orbitGeo.setFromPoints(points);
+                const orbitMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.15 });
+                const orbitLine = new THREE.Line(orbitGeo, orbitMat);
+                scene.add(orbitLine);
+
+                // Planet Sphere
+                const pGeo = new THREE.SphereGeometry(p.size, 32, 32);
+                let pTex = createPlanetCanvasTexture(key, '#' + p.color.toString(16));
+                const pMat = new THREE.MeshStandardMaterial({ 
+                    map: pTex,
+                    roughness: 0.5
+                });
+                
+                const mesh = new THREE.Mesh(pGeo, pMat);
+                mesh.userData = { key: key, angle: Math.random() * Math.PI * 2, dist: p.dist, speed: p.speed, size: p.size };
+                
+                // Add Ring System for Saturn
+                if (key === 'saturn') {
+                    const ringGeo = new THREE.RingGeometry(p.size + 0.6, p.size + 2.2, 64);
+                    const ringMat = new THREE.MeshBasicMaterial({ color: 0xfef08a, side: THREE.DoubleSide, transparent: true, opacity: 0.7 });
+                    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+                    ringMesh.rotation.x = Math.PI / 2.3;
+                    mesh.add(ringMesh);
+                }
+
+                // Add Ring System for Uranus
+                if (key === 'uranus') {
+                    const ringGeo = new THREE.RingGeometry(p.size + 0.4, p.size + 1.2, 32);
+                    const ringMat = new THREE.MeshBasicMaterial({ color: 0x67e8f9, side: THREE.DoubleSide, transparent: true, opacity: 0.4 });
+                    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+                    ringMesh.rotation.x = Math.PI / 6;
+                    mesh.add(ringMesh);
+                }
+
+                scene.add(mesh);
+                planetMeshes.push(mesh);
+            });
+
+            // Mouse Drag Control for Manual Rotating
+            let isDragging = false;
+            let previousMousePosition = { x: 0, y: 0 };
+
+            container.addEventListener('mousedown', () => isDragging = true);
+            window.addEventListener('mouseup', () => isDragging = false);
+            container.addEventListener('mousemove', (e) => {
+                if (isDragging && !focusedTarget) {
+                    const deltaMove = { x: e.clientX - previousMousePosition.x, y: e.clientY - previousMousePosition.y };
+                    camera.position.x += deltaMove.x * 0.08;
+                    camera.position.y -= deltaMove.y * 0.08;
+                }
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+
+            animate3D();
+        }
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+
+            // Rotate Sun
+            if (sunMesh) sunMesh.rotation.y += 0.003;
+
+            // Orbit & Rotate Planets
+            planetMeshes.forEach(p => {
+                p.rotation.y += 0.015;
+                if (isOrbitAnimating) {
+                    p.userData.angle += p.userData.speed * 0.6;
+                    p.position.x = Math.cos(p.userData.angle) * p.userData.dist;
+                    p.position.z = Math.sin(p.userData.angle) * p.userData.dist;
+                }
+            });
+
+            // Handle Camera Smooth Focus Lerp
+            if (focusedTarget) {
+                // Focus on selected planet/sun mesh
+                const targetPos = focusedTarget.position;
+                targetLookAtPos.copy(targetPos);
+
+                // Offset camera position based on target size
+                const offsetDist = focusedTarget.userData.size ? focusedTarget.userData.size * 3.8 + 2.5 : 12;
+                targetCameraPos.set(targetPos.x + offsetDist, targetPos.y + (offsetDist * 0.5), targetPos.z + offsetDist);
+            }
+
+            // Lerp camera position & lookAt target for smooth cinematic feel
+            camera.position.lerp(targetCameraPos, 0.05);
+            currentLookAtPos.lerp(targetLookAtPos, 0.05);
+            camera.lookAt(currentLookAtPos);
+
+            renderer.render(scene, camera);
+        }
+
+        function toggleOrbitAnimation() {
+            isOrbitAnimating = !isOrbitAnimating;
+            const icon = document.getElementById('anim-icon');
+            const txt = document.getElementById('anim-text');
+            if (isOrbitAnimating) {
+                icon.className = 'fa-solid fa-pause text-sky-400';
+                txt.textContent = 'Jeda Orbit';
+            } else {
+                icon.className = 'fa-solid fa-play text-emerald-400';
+                txt.textContent = 'Jalankan Orbit';
+            }
+        }
+
+        function selectPlanet(key) {
+            if (key === 'overview') {
+                focusedTarget = null;
+                targetCameraPos.set(0, 35, 70);
+                targetLookAtPos.set(0, 0, 0);
+                document.getElementById('camera-mode-label').textContent = 'Pandangan Luas Tata Surya';
+                return;
+            }
+
+            const data = planetData[key];
+            if (!data) return;
+
+            // Update Info Card Panel
+            document.getElementById('planet-name').textContent = data.name;
+            document.getElementById('planet-type').textContent = data.type;
+            document.getElementById('planet-desc').textContent = data.desc;
+            document.getElementById('planet-dist').textContent = data.distTxt;
+            document.getElementById('planet-period').textContent = data.periodTxt;
+            document.getElementById('planet-rotation').textContent = data.rotTxt;
+            document.getElementById('planet-temp').textContent = data.tempTxt;
+            document.getElementById('planet-moons').textContent = data.moonsTxt;
+            document.getElementById('planet-color-badge').style.backgroundColor = '#' + data.color.toString(16);
+
+            document.getElementById('camera-mode-label').textContent = `Fokus Zoom ke ${data.name}`;
+
+            // Lock Camera directly onto planet mesh
+            if (key === 'sun') {
+                focusedTarget = sunMesh;
+            } else {
+                focusedTarget = planetMeshes.find(m => m.userData.key === key);
+            }
+        }
+
+        window.addEventListener('load', () => {
+            init3DScene();
+            calculatePlanetaryWeights();
+            updateMoonPhaseSim(14);
+            renderGlossary();
+        });
+
+        // -------------------------------------------------------------
+        // Simulator 1: Planetary Weight Calculator
+        // -------------------------------------------------------------
+        function calculatePlanetaryWeights() {
+            const earthW = parseFloat(document.getElementById('earth-weight').value) || 0;
+            document.getElementById('weight-moon').textContent = (earthW * 0.166).toFixed(1) + ' kg';
+            document.getElementById('weight-mars').textContent = (earthW * 0.377).toFixed(1) + ' kg';
+            document.getElementById('weight-jupiter').textContent = (earthW * 2.528).toFixed(1) + ' kg';
+            document.getElementById('weight-sun').textContent = (earthW * 27.9).toFixed(1) + ' kg';
+        }
+
+        // -------------------------------------------------------------
+        // Simulator 2: Moon Phase Logic
+        // -------------------------------------------------------------
+        const moonPhases = [
+            { day: 0, name: "Bulan Mati / Baru (New Moon)", desc: "Bulan berada di antara Bumi & Matahari. Sisi yang menghadap Bumi gelap total.", bg: "radial-gradient(circle, #0f172a 100%, #000 100%)" },
+            { day: 4, name: "Bulan Sabit Awal (Waxing Crescent)", desc: "Kurang dari separuh Bulan tampak menyala seperti sabit di langit barat.", bg: "linear-gradient(90deg, #0f172a 70%, #fef08a 30%)" },
+            { day: 7, name: "Kuartal Pertama (First Quarter)", desc: "Separuh kanan permukaan Bulan tampak terang oleh sinar Matahari.", bg: "linear-gradient(90deg, #0f172a 50%, #fef08a 50%)" },
+            { day: 11, name: "Bulan Cembung Awal (Waxing Gibbous)", desc: "Lebih dari separuh Bulan menyinari malam, bertambah besar menuju Purnama.", bg: "linear-gradient(90deg, #0f172a 25%, #fef08a 75%)" },
+            { day: 14, name: "Bulan Purnama (Full Moon)", desc: "Seluruh permukaan Bulan yang menghadap Bumi tersinari penuh oleh Matahari.", bg: "radial-gradient(circle at 30% 30%, #fef08a, #ca8a04 80%)" },
+            { day: 18, name: "Bulan Cembung Akhir (Waning Gibbous)", desc: "Iluminasi Bulan mulai menyusut sedikit demi sedikit setelah fase Purnama.", bg: "linear-gradient(90deg, #fef08a 75%, #0f172a 25%)" },
+            { day: 22, name: "Kuartal Ketiga (Third Quarter)", desc: "Separuh bagian kiri Bulan tampak menyala terang sebelum fajar.", bg: "linear-gradient(90deg, #fef08a 50%, #0f172a 50%)" },
+            { day: 26, name: "Bulan Sabit Akhir (Waning Crescent)", desc: "Bulan berbentuk sabit tipis di ufuk timur sebelum menjadi Bulan Baru.", bg: "linear-gradient(90deg, #fef08a 20%, #0f172a 80%)" }
+        ];
+
+        function updateMoonPhaseSim(dayVal) {
+            dayVal = parseInt(dayVal);
+            let currentPhase = moonPhases[0];
+            for (let i = 0; i < moonPhases.length; i++) {
+                if (dayVal >= moonPhases[i].day) currentPhase = moonPhases[i];
+            }
+            document.getElementById('moon-phase-name').textContent = currentPhase.name;
+            document.getElementById('moon-phase-desc').textContent = `Hari ke-${dayVal}: ${currentPhase.desc}`;
+            document.getElementById('moon-phase-visual').style.background = currentPhase.bg;
+        }
+
+        // -------------------------------------------------------------
+        // Reading Modal Content Database
+        // -------------------------------------------------------------
+        const moduleArticles = {
+            1: {
+                badge: "BAB 01",
+                title: "Pengenalan Astronomi & Tata Surya",
+                html: `
+                    <p class="text-base text-slate-200"><strong>Astronomi</strong> (dari bahasa Yunani <em>astron</em> + <em>nomos</em>) adalah cabang ilmu sains alam yang mempelajari benda-benda langit, fenomena fisik kosmos, serta asal-usul evolusi Alam Semesta.</p>
+                    
+                    <h4 class="text-white text-base font-bold mt-4 mb-2"><i class="fa-solid fa-orbits text-sky-400 mr-2"></i>Hukum Kepler Gerakan Planet</h4>
+                    <ul class="list-disc pl-5 space-y-2 text-slate-300">
+                        <li><strong>Hukum I Kepler:</strong> Orbit setiap planet mengelilingi Matahari berbentuk <em>Elips</em>, dengan Matahari berada di salah satu titik fokusnya.</li>
+                        <li><strong>Hukum II Kepler:</strong> Vektor radius lintasan menyapu luas area yang sama dalam interval waktu yang sama. Planet bergerak lebih cepat saat dekat Matahari (Perihelion) dan lebih lambat saat jauh (Aphelion).</li>
+                        <li><strong>Hukum III Kepler:</strong> Kuadrat periode revolusi planet ($T^2$) berbanding lurus dengan pangkat tiga jarak rata-ratanya dari Matahari ($a^3$).</li>
+                    </ul>
+
+                    <h4 class="text-white text-base font-bold mt-4 mb-2"><i class="fa-solid fa-sun text-amber-400 mr-2"></i>Klasifikasi Anggota Tata Surya</h4>
+                    <p>Matahari memegang 99.86% massa total Tata Surya, mengikat 8 planet utama:</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 my-3">
+                        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800">
+                            <strong class="text-sky-400 block mb-1">Planet Terestrial (Inner)</strong>
+                            Merkurius, Venus, Bumi, Mars. Memiliki permukaan batuan padat, kerapatan massa tinggi, serta ukuran lebih kecil.
+                        </div>
+                        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800">
+                            <strong class="text-purple-400 block mb-1">Planet Jovian / Raksasa (Outer)</strong>
+                            Yupiter, Saturnus, Uranus, Neptunus. Didominasi gas hidrogen, helium & es, berukuran raksasa, serta memiliki banyak satelit.
+                        </div>
+                    </div>
+                `
+            },
+            2: {
+                badge: "BAB 02",
+                title: "Bintang & Astrofisika Evolusi",
+                html: `
+                    <p class="text-base text-slate-200"><strong>Bintang</strong> adalah bola gas bercahaya yang memancarkan energi melalui reaksi fusi termonuklir di intinya, mengubah Hidrogen menjadi Helium.</p>
+                    
+                    <h4 class="text-white text-base font-bold mt-4 mb-2"><i class="fa-solid fa-palette text-purple-400 mr-2"></i>Klasifikasi Spektrum Bintang (OBAFGKM)</h4>
+                    <p>Warna bintang mencerminkan suhu permukaannya:</p>
+                    <p class="font-mono text-sky-400 bg-slate-950 p-3 rounded-xl border border-slate-800 my-2">O (Biru >30.000K) → B (Biru-Putih) → A (Putih) → F (Kuning-Putih) → G (Kuning 5.500K / Matahari) → K (Jingga) → M (Merah <3.700K)</p>
+
+                    <h4 class="text-white text-base font-bold mt-4 mb-2"><i class="fa-solid fa-skull-crossbones text-rose-400 mr-2"></i>Tahap Kematian Bintang</h4>
+                    <ul class="list-disc pl-5 space-y-2 text-slate-300">
+                        <li><strong>Massa Sedang (Matahari):</strong> Raksasa Merah → Nebula Planet → Katai Putih (White Dwarf).</li>
+                        <li><strong>Massa Raksasa (>8x Massa Matahari):</strong> Supernova → Bintang Neutron (Pulsar) atau Lubang Hitam (Black Hole) jika massa inti melampaui Batas Oppenheimer-Volkoff.</li>
+                    </ul>
+                `
+            },
+            3: {
+                badge: "BAB 03",
+                title: "Galaksi & Kosmologi Modern",
+                html: `
+                    <p class="text-base text-slate-200"><strong>Kosmologi</strong> mempelajari struktur skala besar, sejarah, serta nasib akhir Alam Semesta.</p>
+
+                    <h4 class="text-white text-base font-bold mt-4 mb-2"><i class="fa-solid fa-atom text-emerald-400 mr-2"></i>Teori Big Bang & Hukum Hubble</h4>
+                    <p>Berdasarkan fenomena pergeseran merah (Redshift) galaksi jauh, Alam Semesta berawal dari titik kompresi tak terhingga (Singularitas) sekitar <strong>13.8 Miliar Tahun Lalu</strong> yang berekspansi pesat hingga kini.</p>
+
+                    <h4 class="text-white text-base font-bold mt-4 mb-2"><i class="fa-solid fa-bahai text-indigo-400 mr-2"></i>Materi Gelap & Energi Gelap</h4>
+                    <ul class="list-disc pl-5 space-y-2 text-slate-300 my-2">
+                        <li><strong>68% Energi Gelap (Dark Energy):</strong> Mendorong percepatan ekspansi ruang semesta.</li>
+                        <li><strong>27% Materi Gelap (Dark Matter):</strong> Massa tak kasat mata penyedia gravitasi pemegang galaksi.</li>
+                        <li><strong>5% Materi Barium Biasa:</strong> Seluruh bintang, planet, dan molekul fisik.</li>
+                    </ul>
+                `
+            },
+            4: {
+                badge: "BAB 04",
+                title: "Sistem Bumi-Bulan & Fenomena Langit",
+                html: `
+                    <p class="text-base text-slate-200">Interaksi gravitasi Matahari, Bumi, dan Bulan menghasilkan ritme fenomena alam spektakuler.</p>
+
+                    <h4 class="text-white text-base font-bold mt-4 mb-2"><i class="fa-solid fa-sun text-amber-400 mr-2"></i>Mekanisme Gerhana & Pasang Surut</h4>
+                    <div class="space-y-3 my-2">
+                        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                            <strong class="text-amber-400">Gerhana Matahari:</strong> Bulan berada tepat sejajar di antara Matahari dan Bumi (Bulan Baru), menghalangi sinar Matahari.
+                        </div>
+                        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                            <strong class="text-rose-400">Gerhana Bulan:</strong> Bumi berada di antara Matahari dan Bulan (Bulan Purnama), sehingga Bulan masuk ke dalam bayangan Umbra Bumi.
+                        </div>
+                    </div>
+                `
+            }
+        };
+
+        function openModuleModal(chapNum) {
+            const mod = moduleArticles[chapNum];
+            if (!mod) return;
+            document.getElementById('modal-chapter-badge').textContent = mod.badge;
+            document.getElementById('modal-chapter-title').textContent = mod.title;
+            document.getElementById('modal-chapter-content').innerHTML = mod.html;
+            document.getElementById('module-modal').classList.remove('hidden');
+        }
+
+        function closeModuleModal() {
+            document.getElementById('module-modal').classList.add('hidden');
+        }
+
+        // -------------------------------------------------------------
+        // EXPANDED ASTRONOMY GLOSSARY DATABASE (32+ Terms)
+        // -------------------------------------------------------------
+        const glossaryItems = [
+            { cat: "eksplorasi", term: "Light Year (Tahun Cahaya)", def: "Satuan jarak astronomi yang ditempuh cahaya dalam waktu satu tahun hampa udara (~9.46 triliun km)." },
+            { cat: "bintang", term: "Nebula", def: "Awan raksasa debu kosmik dan gas hidrogen/helium tempat kelahiran bintang-bintang baru." },
+            { cat: "kosmologi", term: "Black Hole (Lubang Hitam)", def: "Wilayah ruang-waktu dengan gravitasi sangat kuat sehingga cahaya sekalipun tidak sanggup lolos dari Horizon Peristiwa." },
+            { cat: "eksplorasi", term: "Parsec (pc)", def: "Satuan jarak astronomi setara 3.26 tahun cahaya (206.265 AU) berdasarkan paralaks satu detik busur." },
+            { cat: "tatasurya", term: "Exoplanet (Eksoplanet)", def: "Planet yang mengorbit bintang di luar sistem Tata Surya kita." },
+            { cat: "bintang", term: "Supernova", def: "Ledakan dahsyat puncaknya kematian bintang raksasa yang memancarkan energi setara miliaran bintang." },
+            { cat: "eksplorasi", term: "Astronomical Unit (AU)", def: "Satuan astronomi jarak rata-rata antara Bumi dan Matahari, bernilai sekitar 149.6 juta km." },
+            { cat: "kosmologi", term: "Event Horizon (Horizon Peristiwa)", def: "Batas luar Lubang Hitam di mana kecepatan lepas melampaui kecepatan cahaya." },
+            { cat: "kosmologi", term: "Redshift (Pergeseran Merah)", def: "Peregangan panjang gelombang cahaya menuju spektrum merah akibat sumber menjauhi pengamat (ekspansi ruang)." },
+            { cat: "bintang", term: "Quasar", def: "Inti galaksi aktif yang luar biasa cerah, didorong oleh lubang hitam supermasif yang melahap materi." },
+            { cat: "bintang", term: "Pulsar", def: "Bintang neutron berotasi sangat cepat yang memancarkan pancaran radiasi elektromagnetik teratur seperti mercusuar." },
+            { cat: "bintang", term: "Magnetar", def: "Bintang neutron dengan medan magnet yang luar biasa kuat, miliaran kali lebih kuat dari medan magnet Bumi." },
+            { cat: "bintang", term: "Bintang Neutron", def: "Sisa inti bintang padat hasil supernova yang seluruhnya terdiri dari partikel neutron terkompresi." },
+            { cat: "bintang", term: "Katai Putih (White Dwarf)", def: "Tahap akhir evolusi bintang bermassa sedang (seperti Matahari) setelah menghembuskan selubung luar nebula planet." },
+            { cat: "bintang", term: "Katai Cokelat (Brown Dwarf)", def: "Objek subtelar yang tidak memiliki massa cukup untuk memicu fusi hidrogen di intinya ('bintang gagal')." },
+            { cat: "tatasurya", term: "Goldilocks Zone (Zona Layak Huni)", def: "Wilayah sekitar bintang tempat suhu memungkinkan air cair tetap ada di permukaan planet." },
+            { cat: "kosmologi", term: "Dark Matter (Materi Gelap)", def: "Materi misterius tak kasat mata yang menyumbang 27% isi semesta dan memberikan gravitasi penahan galaksi." },
+            { cat: "kosmologi", term: "Dark Energy (Energi Gelap)", def: "Gaya misterius yang menyumbang 68% Alam Semesta dan mendorong percepatan ekspansi ruang kosmos." },
+            { cat: "kosmologi", term: "CMB (Cosmic Microwave Background)", def: "Radiasi fosil sisa peninggalan era awal Big Bang yang memenuhi seluruh penjuru Alam Semesta." },
+            { cat: "kosmologi", term: "Gravitational Lensing (Lensa Gravitasi)", def: "Pembelokan cahaya dari galaksi jauh akibat medan gravitasi objek masif di depannya." },
+            { cat: "tatasurya", term: "Awan Oort (Oort Cloud)", def: "Awan bola raksasa berisi triliunan komet es di batas terluar Gravitasi Tata Surya." },
+            { cat: "tatasurya", term: "Sabuk Kuiper (Kuiper Belt)", def: "Wilayah berbentuk cincin di luar orbit Neptunus yang dipenuhi objek es seperti Pluto & Eris." },
+            { cat: "kosmologi", term: "Spaghettification", def: "Efek peregangan vertikal ekstrem akibat gaya pasang surut gravitasi saat mendekati lubang hitam." },
+            { cat: "kosmologi", term: "Hawking Radiation", def: "Radiasi kuantum teoritis yang dipancarkan dari batas lubang hitam, menyebabkan lubang hitam menguap perlahan." },
+            { cat: "eksplorasi", term: "Lagrange Points (Titik Lagrange)", def: "Titik-titik kesetimbangan gravitasi antara dua benda besar tempat satelit/teleskop dapat 'berdiam' stabil (contoh: JWST di L2)." },
+            { cat: "tatasurya", term: "Tidal Locking (Penguncian Pasang Surut)", def: "Kondisi di mana periode rotasi satelit sama dengan periode revolusinya (seperti Bulan yang selalu memperlihatkan wajah yang sama ke Bumi)." },
+            { cat: "bintang", term: "Batas Chandrasekhar", def: "Batas massa maksimum untuk Katai Putih stabil (~1.44 massa Matahari) sebelum runtuh menjadi bintang neutron." },
+            { cat: "tatasurya", term: "Batas Roche (Roche Limit)", def: "Jarak minimum di mana benda langit yang ditahan gravitasi sendiri akan hancur oleh gaya pasang surut benda induknya." },
+            { cat: "tatasurya", term: "Coronal Mass Ejection (CME)", def: "Pelepasan plasma panas dan medan magnet dalam jumlah raksasa dari korona Matahari ke ruang antarplanet." },
+            { cat: "eksplorasi", term: "Dyson Sphere", def: "Megastruktur hipotetis buatan peradaban maju yang mengelilingi bintang untuk memanen seluruh daya energinya." },
+            { cat: "kosmologi", term: "Wormhole (Lubang Cacing)", def: "Jembatan spekulatif dalam struktur ruang-waktu yang menghubungkan dua titik berjauhan di alam semesta." },
+            { cat: "bintang", term: "Variabel Cepheid", def: "Bintang berdenyut dengan hubungan erat antara periode denyut dan luminositasi aslinya, digunakan sebagai 'lilin standar' pengukur jarak galaksi." }
+        ];
+
+        let currentGlossaryCat = 'all';
+
+        function renderGlossary() {
+            const query = document.getElementById('glossary-search').value.toLowerCase();
+            const container = document.getElementById('glossary-grid');
+            container.innerHTML = '';
+
+            const filtered = glossaryItems.filter(item => {
+                const matchCat = (currentGlossaryCat === 'all' || item.cat === currentGlossaryCat);
+                const matchSearch = item.term.toLowerCase().includes(query) || item.def.toLowerCase().includes(query);
+                return matchCat && matchSearch;
+            });
+
+            document.getElementById('cat-count-all').textContent = glossaryItems.length;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center text-slate-500 py-12">Tidak ditemukan istilah yang cocok. Coba kata kunci lain.</div>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'glass-card p-6 rounded-2xl border border-slate-800';
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-display text-base font-bold text-rose-400">${item.term}</h4>
+                        <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">${item.cat}</span>
+                    </div>
+                    <p class="text-xs text-slate-300 leading-relaxed">${item.def}</p>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function setGlossaryCategory(cat, ev) {
+            currentGlossaryCat = cat;
+            const buttons = document.querySelectorAll('.glossary-cat-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-rose-500', 'text-white', 'border-rose-400');
+                btn.classList.add('bg-slate-900', 'text-slate-300', 'border-slate-700');
+            });
+            if (ev && ev.currentTarget) {
+                ev.currentTarget.classList.remove('bg-slate-900', 'text-slate-300', 'border-slate-700');
+                ev.currentTarget.classList.add('bg-rose-500', 'text-white', 'border-rose-400');
+            }
+            renderGlossary();
+        }
+
+        function filterGlossary() {
+            renderGlossary();
+        }
+    </script>
+</body>
+</html>
